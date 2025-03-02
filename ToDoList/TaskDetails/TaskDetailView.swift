@@ -9,7 +9,7 @@ import UIKit
 
 class TaskDetailView: BaseView {
     
-    private lazy var titleTextField: UITextField = {
+    lazy var titleTextField: UITextField = {
         let textField = UITextField()
         textField.font = .systemFont(ofSize: 25, weight: .bold)
         textField.textColor = .customWhite
@@ -18,7 +18,7 @@ class TaskDetailView: BaseView {
         return textField
     }()
     
-    private lazy var dateLabel = UILabel(
+    lazy var dateLabel = UILabel(
         text: Date().formatDate(),
         font: .systemFont(ofSize: 12, weight: .regular),
         color: .customWhite.withAlphaComponent(0.5),

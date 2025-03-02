@@ -8,9 +8,9 @@
 import UIKit
 
 struct Task {
-    let title: String
-    let description: String
-    let date: String
+    var title: String
+    var description: String
+    var date: String
     var isCompleted: Bool
 }
 
@@ -193,6 +193,11 @@ extension TaskViewController: UITableViewDelegate, UITableViewDataSource {
     
     @objc private func editButtonTapped() {
         let taskDetailVC = TaskDetailViewController()
+        taskDetailVC.createdTask = {[weak self] task in
+            guard let self, let task else { return }
+            self.tasks.insert(task, at: 0)
+            self.tableView.reloadData()
+        }
         navigationController?.pushViewController(taskDetailVC, animated: true)
     }
 }
