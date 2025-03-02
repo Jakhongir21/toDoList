@@ -7,69 +7,66 @@
 
 import UIKit
 
-final class TaskCell: UITableViewCell {
+final class TaskCell: BaseTableCell {
     
     private lazy var bottomView = UIView()
     
-    private let titleLabel: UILabel = {
-        let label = UILabel()
-        label.font = UIFont.systemFont(ofSize: 16, weight: .medium)
-        label.textColor = .customWhite
-        return label
-    }()
+    private lazy var titleLabel = UILabel(
+        font: .systemFont(ofSize: 16, weight: .medium),
+        color: .customWhite,
+        lines: 0,
+        alignment: .left
+    )
     
-    private let descriptionLabel: UILabel = {
-        let label = UILabel()
-        label.font = UIFont.systemFont(ofSize: 12, weight: .regular)
-        label.textColor = .customWhite
-        label.numberOfLines = 2
-        return label
-    }()
+    private lazy var descriptionLabel = UILabel(
+        font: .systemFont(ofSize: 12, weight: .regular),
+        color: .customWhite,
+        lines: 0,
+        alignment: .left
+    )
     
-    private let dateLabel: UILabel = {
-        let label = UILabel()
-        label.font = UIFont.systemFont(ofSize: 12, weight: .light)
-        label.textColor = .customWhite
-        return label
-    }()
-    
+    private lazy var dateLabel = UILabel(
+        font: .systemFont(ofSize: 12, weight: .light),
+        color: .customWhite,
+        lines: 0
+    )
+
     private let checkmark: UIImageView = {
         let imageView = UIImageView()
-        imageView.image = UIImage(systemName: "circle") // Default unchecked
-        imageView.tintColor = UIColor(hex: "4D555E")
+        imageView.image = UIImage(systemName: "circle")
+        imageView.tintColor = .grayColor
         return imageView
     }()
     
-    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
-        super.init(style: style, reuseIdentifier: reuseIdentifier)
+    private lazy var contentVStackView = UIStackView(
+        axis: .vertical,
+        distribution: .fill,
+        alignment: .fill,
+        layoutMargins: nil,
+        spacing: 6
+    )
+    
+    func setup() {
         bottomView.backgroundColor = .grayColor
         backgroundColor = .black
         selectionStyle = .none
-        contentView.addSubviews(checkmark, titleLabel, descriptionLabel, dateLabel, bottomView)
+        contentView.addSubviews(checkmark, contentVStackView, bottomView)
         
+        contentVStackView.addArrangedSubviews(titleLabel, descriptionLabel, dateLabel)
+    }
+    
+    func setupConstraints(){
         checkmark.snp.makeConstraints { make in
-            make.leading.equalToSuperview()
-            make.centerY.equalToSuperview()
-            make.width.height.equalTo(24)
+            make.left.equalToSuperview()
+            make.top.equalToSuperview().inset(12)
+            make.size.equalTo(24)
         }
         
-        titleLabel.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(12)
-            make.leading.equalTo(checkmark.snp.trailing).offset(8)
-            make.trailing.equalToSuperview()
-        }
-        
-        descriptionLabel.snp.makeConstraints { make in
-            make.top.equalTo(titleLabel.snp.bottom).offset(6)
-            make.leading.equalTo(titleLabel)
-            make.trailing.equalToSuperview()
-        }
-        
-        dateLabel.snp.makeConstraints { make in
-            make.top.equalTo(descriptionLabel.snp.bottom).offset(6)
-            make.leading.equalTo(titleLabel)
-            make.bottom.equalToSuperview().inset(12)
-        }
+        contentVStackView.snp.makeConstraints({
+            $0.left.equalTo(checkmark.snp.right).offset(8)
+            $0.right.equalToSuperview()
+            $0.verticalEdges.equalToSuperview().inset(12)
+        })
         
         bottomView.snp.makeConstraints({
             $0.bottom.horizontalEdges.equalToSuperview()
@@ -77,13 +74,17 @@ final class TaskCell: UITableViewCell {
         })
     }
     
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        checkmark.image = nil
+        titleLabel.text = nil
+        descriptionLabel.text = nil
+        dateLabel.text = nil
+    }
+    
     override func layoutSubviews() {
         super.layoutSubviews()
         contentView.frame = contentView.frame.inset(by: UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20))
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
     }
     
     func configure(title: String, description: String, date: String, isCompleted: Bool) {
