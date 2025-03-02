@@ -1,8 +1,8 @@
 //
-//  UIView + Ext.swift
-//  rizz-ai-dating-assistant-v8
+//  UView+Ext.swift
+//  ToDoList
 //
-//  Created by Nodirbek Khudoyberdiev on 01/07/24.
+//  Created by Jakhongir on 02/03/25.
 //
 
 import UIKit
@@ -64,4 +64,21 @@ extension UIViewController {
         }
     }
     
+}
+
+extension UIView {
+    convenience init(backgroundColor: UIColor) {
+        self.init()
+        self.backgroundColor = backgroundColor
+    }
+
+    func addSeparator() {
+        let separatorHeight: CGFloat = 2
+        let frame = CGRect(x: 0, y: bounds.height - separatorHeight, width: bounds.width, height: separatorHeight)
+        let separator = UIView(frame: frame)
+        separator.backgroundColor = .gray
+        separator.autoresizingMask = [.flexibleTopMargin, .flexibleWidth]
+
+        addSubview(separator)
+    }
 }

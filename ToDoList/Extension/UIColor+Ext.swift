@@ -1,16 +1,18 @@
 //
-//  UIColor + Ext.swift
-//  rizz-ai-dating-assistant-v8
+//  UIColor+Ext.swift
+//  ToDoList
 //
-//  Created by Nodirbek Khudoyberdiev on 01/07/24.
+//  Created by Jakhongir on 02/03/25.
 //
 
+import Foundation
 import UIKit
 
 extension UIColor {
     
-    static let background = UIColor(hex: "0A0A0A")
-    static let secondaryBackground = UIColor(hex: "2C2E37")
+    static let background = UIColor(hex: "040404")
+    static let customWhite = UIColor(hex: "F4F4F4")
+    static let grayColor = UIColor(hex: "4D555E")
     
     convenience init(hex: String) {
         let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)

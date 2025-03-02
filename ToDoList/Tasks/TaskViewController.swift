@@ -7,45 +7,43 @@
 
 import UIKit
 
-class TaskViewController: UIViewController {
+final class TaskViewController: UIViewController {
     
     let searchController: UISearchController = {
         let searchController = UISearchController(searchResultsController: nil)
         searchController.obscuresBackgroundDuringPresentation = false
         searchController.searchBar.placeholder = "Search"
         searchController.searchBar.barStyle = .black
-        searchController.searchBar.searchTextField.textColor = UIColor(hex: "F4F4F4")
+        searchController.searchBar.searchTextField.textColor = .customWhite
         return searchController
     }()
     
     let tableView: UITableView = {
         let table = UITableView()
-        table.backgroundColor = UIColor(hex: "040404")
+        table.backgroundColor = .clear
         table.separatorStyle = .none
-        table.register(TaskCell.self, forCellReuseIdentifier: TaskCell.identifier)
         return table
     }()
     
     let editButton: UIButton = {
         let button = UIButton()
         button.setImage(.addTask, for: .normal)
-        button.tintColor = UIColor(hex: "#FED702")
+        button.tintColor = .accent
         return button
     }()
     
     let bottomTitle: UILabel = {
         let label = UILabel()
-        label.text = "7 Задач"
         label.font = .systemFont(ofSize: 11, weight: .regular)
-        label.textColor = UIColor(hex: "F4F4F4")
+        label.textColor = .customWhite
         label.textAlignment = .center
         return label
     }()
     
     struct Task {
-        var title: String
-        var description: String
-        var date: String
+        let title: String
+        let description: String
+        let date: String
         var isCompleted: Bool
     }
     
@@ -55,36 +53,30 @@ class TaskViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "Задачи"
-        navigationController?.navigationBar.prefersLargeTitles = true
-        view.backgroundColor = UIColor(hex: "040404")
+        setupNavbar()
+        setupUI()
+        setupConstraints()
+        fetchData()
+    }
+}
+
+private extension TaskViewController {
+    func setupUI() {
+        searchController.searchResultsUpdater = self
+        view.addSubviews(tableView, editButton, bottomTitle)
+        view.backgroundColor = .background
         tableView.delegate = self
         tableView.dataSource = self
         editButton.addTarget(self, action: #selector(editButtonTapped), for: .touchUpInside)
-        
-        navigationItem.searchController = searchController
-        searchController.searchResultsUpdater = self
-        definesPresentationContext = true
-        
-        view.addSubviews(tableView, editButton, bottomTitle)
-        setupConstraints()
-        
-        APIClient.shared.getMockData { result in
-            switch result {
-            case .success(let toDoItems):
-                self.tasks = toDoItems.map {
-                    Task(title: $0.todo, description: "Example description", date: "09/10/24", isCompleted: $0.completed)
-                }
-                DispatchQueue.main.async {
-                    self.tableView.reloadData()
-                }
-            case .failure(let error):
-                print("error", error)
-            }
-        }
     }
     
-    private func setupConstraints() {
+    func setupNavbar(){
+        title = "Задачи"
+        navigationController?.navigationBar.prefersLargeTitles = true
+        navigationItem.searchController = searchController
+    }
+    
+    func setupConstraints() {
         
         tableView.snp.makeConstraints { make in
             make.top.equalTo(view.safeAreaLayoutGuide).offset(16)
@@ -102,6 +94,25 @@ class TaskViewController: UIViewController {
             make.bottom.equalTo(view.safeAreaLayoutGuide).inset(15.5)
         }
     }
+     
+    func fetchData() {
+        
+        APIClient.shared.getMockData {[weak self] result in
+            guard let self else { return }
+            switch result {
+            case .success(let toDoItems):
+                self.tasks = toDoItems.map {
+                    Task(title: $0.todo, description: "Example description", date: "09/10/24", isCompleted: $0.completed)
+                }
+                DispatchQueue.main.async {
+                    self.bottomTitle.text = "\(self.tasks.count) задач"
+                    self.tableView.reloadData()
+                }
+            case .failure(let error):
+                print("error", error)
+            }
+        }
+    }
 }
 
 extension TaskViewController: UITableViewDelegate, UITableViewDataSource {
@@ -110,10 +121,7 @@ extension TaskViewController: UITableViewDelegate, UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard let cell = tableView.dequeueReusableCell(withIdentifier: "TaskCell", for: indexPath) as? TaskCell else {
-            return UITableViewCell()
-        }
-        
+        let cell: TaskCell = tableView.dequeueCell(for: indexPath)
         let task = isSearchActive ? filteredTasks[indexPath.row] : tasks[indexPath.row]
         cell.configure(title: task.title, description: task.description, date: task.date, isCompleted: task.isCompleted)
         return cell
