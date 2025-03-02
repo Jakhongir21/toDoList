@@ -7,6 +7,13 @@
 
 import UIKit
 
+struct Task {
+    let title: String
+    let description: String
+    let date: String
+    var isCompleted: Bool
+}
+
 final class TaskViewController: UIViewController {
     
     let searchController: UISearchController = {
@@ -40,13 +47,6 @@ final class TaskViewController: UIViewController {
         return label
     }()
     
-    struct Task {
-        let title: String
-        let description: String
-        let date: String
-        var isCompleted: Bool
-    }
-    
     private var tasks: [Task] = []
     private var filteredTasks: [Task] = []
     private var isSearchActive: Bool { return !searchController.searchBar.text!.isEmpty }
@@ -57,6 +57,7 @@ final class TaskViewController: UIViewController {
         setupUI()
         setupConstraints()
         fetchData()
+        addNotifications()
     }
 }
 
@@ -102,7 +103,12 @@ private extension TaskViewController {
             switch result {
             case .success(let toDoItems):
                 self.tasks = toDoItems.map {
-                    Task(title: $0.todo, description: "Example description", date: "09/10/24", isCompleted: $0.completed)
+                    Task(
+                        title: $0.todo,
+                        description: "Example description",
+                        date: Date().formatDate(),
+                        isCompleted: $0.completed
+                    )
                 }
                 DispatchQueue.main.async {
                     self.bottomTitle.text = "\(self.tasks.count) задач"
@@ -113,10 +119,55 @@ private extension TaskViewController {
             }
         }
     }
+    
+    func addNotifications(){
+        NotificationCenter.default.addObserver(self, selector: #selector(handleEditTask(_:)), name: .editTask, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(handleShareTask(_:)), name: .shareTask, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(handleDeleteTask(_:)), name: .deleteTask, object: nil)
+    }
+    
+    @objc func handleEditTask(_ notification: Notification) {
+        guard let indexPath = getIndex(notification) else { return }
+        
+        let task = isSearchActive ? filteredTasks[indexPath.row] : tasks[indexPath.row]
+        let taskDetailVC = TaskDetailViewController(task: task)
+        navigationController?.pushViewController(taskDetailVC, animated: true)
+    }
+
+    @objc func handleShareTask(_ notification: Notification) {
+        guard let indexPath = getIndex(notification) else { return }
+        
+        let task = isSearchActive ? filteredTasks[indexPath.row] : tasks[indexPath.row]
+        
+        let activityVC = UIActivityViewController(activityItems: [task.title, task.description], applicationActivities: nil)
+        present(activityVC, animated: true)
+    }
+
+    @objc func handleDeleteTask(_ notification: Notification) {
+        
+        guard let indexPath = getIndex(notification) else { return }
+        
+        if isSearchActive {
+            let originalIndex = tasks.firstIndex { $0.title == filteredTasks[indexPath.row].title }!
+            tasks.remove(at: originalIndex)
+            filteredTasks.remove(at: indexPath.row)
+        } else {
+            tasks.remove(at: indexPath.row)
+        }
+        
+        tableView.deleteRows(at: [indexPath], with: .fade)
+    }
+    
+    func getIndex(_ notification: Notification) -> IndexPath? {
+        guard let cell = notification.object as? TaskCell,
+              let indexPath = tableView.indexPath(for: cell) else { return nil }
+        return indexPath
+    }
 }
 
 extension TaskViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        self.bottomTitle.text = "\(self.tasks.count) задач"
         return isSearchActive ? filteredTasks.count : tasks.count
     }
     

@@ -53,13 +53,16 @@ final class TaskCell: BaseTableCell {
         contentView.addSubviews(checkmark, contentVStackView, bottomView)
         
         contentVStackView.addArrangedSubviews(titleLabel, descriptionLabel, dateLabel)
+        
+        let interaction = UIContextMenuInteraction(delegate: self)
+        addInteraction(interaction)
     }
     
     func setupConstraints(){
-        checkmark.snp.makeConstraints { make in
-            make.left.equalToSuperview()
-            make.top.equalToSuperview().inset(12)
-            make.size.equalTo(24)
+        checkmark.snp.makeConstraints {
+            $0.left.equalToSuperview()
+            $0.top.equalToSuperview().inset(12)
+            $0.size.equalTo(24)
         }
         
         contentVStackView.snp.makeConstraints({
@@ -108,6 +111,27 @@ final class TaskCell: BaseTableCell {
             titleLabel.attributedText = NSAttributedString(string: title, attributes: [
                 .foregroundColor: UIColor.white
             ])
+        }
+    }
+}
+
+extension TaskCell: UIContextMenuInteractionDelegate {
+    func contextMenuInteraction(_ interaction: UIContextMenuInteraction, configurationForMenuAtLocation location: CGPoint) -> UIContextMenuConfiguration? {
+        
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
+            let editAction = UIAction(title: "Edit", image: UIImage(systemName: "square.and.pencil")) { _ in
+                NotificationCenter.default.post(name: .editTask, object: self)
+            }
+            
+            let shareAction = UIAction(title: "Share", image: UIImage(systemName: "square.and.arrow.up")) { _ in
+                NotificationCenter.default.post(name: .shareTask, object: self)
+            }
+            
+            let deleteAction = UIAction(title: "Delete", image: UIImage(systemName: "trash"), attributes: .destructive) { _ in
+                NotificationCenter.default.post(name: .deleteTask, object: self)
+            }
+            
+            return UIMenu(title: "", children: [editAction, shareAction, deleteAction])
         }
     }
 }
