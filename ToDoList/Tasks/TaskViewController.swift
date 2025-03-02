@@ -22,6 +22,7 @@ final class TaskViewController: UIViewController {
         searchController.searchBar.placeholder = "Search"
         searchController.searchBar.barStyle = .black
         searchController.searchBar.searchTextField.textColor = .customWhite
+        searchController.searchBar.tintColor = .accent
         return searchController
     }()
     
