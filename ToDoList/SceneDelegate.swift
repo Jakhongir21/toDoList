@@ -17,9 +17,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let windowScene = (scene as? UIWindowScene) else { return }
         window = UIWindow(windowScene: windowScene)
         let nav = UINavigationController(rootViewController: TaskViewController())
-        nav.setNavigationBarHidden(true, animated: false)
         window?.rootViewController = nav
-        window?.overrideUserInterfaceStyle = .light
+        window?.overrideUserInterfaceStyle = .dark
         window?.makeKeyAndVisible()
     }
 

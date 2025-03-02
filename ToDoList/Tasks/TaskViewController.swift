@@ -9,29 +9,20 @@ import UIKit
 
 class TaskViewController: UIViewController {
     
-    let titleLabel: UILabel = {
-        let label = UILabel()
-        label.text = "Задачи"
-        label.font = UIFont.systemFont(ofSize: 34, weight: .bold)
-        label.textColor = UIColor(hex: "F4F4F4")
-        label.textAlignment = .center
-        return label
-    }()
-    
-    let searchBar: UISearchBar = {
-        let search = UISearchBar()
-        search.placeholder = "Search"
-        search.barStyle = .black
-        search.searchTextField.backgroundColor = .clear
-        search.searchTextField.textColor = UIColor(hex: "F4F4F4")
-        return search
+    let searchController: UISearchController = {
+        let searchController = UISearchController(searchResultsController: nil)
+        searchController.obscuresBackgroundDuringPresentation = false
+        searchController.searchBar.placeholder = "Search"
+        searchController.searchBar.barStyle = .black
+        searchController.searchBar.searchTextField.textColor = UIColor(hex: "F4F4F4")
+        return searchController
     }()
     
     let tableView: UITableView = {
         let table = UITableView()
         table.backgroundColor = UIColor(hex: "040404")
         table.separatorStyle = .none
-        table.register(TaskCell.self, forCellReuseIdentifier: TaskCell.identifier) // Register custom cell
+        table.register(TaskCell.self, forCellReuseIdentifier: TaskCell.identifier)
         return table
     }()
     
@@ -47,7 +38,6 @@ class TaskViewController: UIViewController {
         label.text = "7 Задач"
         label.font = .systemFont(ofSize: 11, weight: .regular)
         label.textColor = UIColor(hex: "F4F4F4")
-        label.numberOfLines = 1
         label.textAlignment = .center
         return label
     }()
@@ -59,37 +49,32 @@ class TaskViewController: UIViewController {
         var isCompleted: Bool
     }
     
-    
     private var tasks: [Task] = []
-//    private var tasks: [Task] = [
-//        Task(title: "Почитать книгу", description: "Составить список необходимых продуктов для ужина. Не забыть проверить, что уже есть в холодильнике.", date: "09/10/24", isCompleted: false),
-//        Task(title: "Уборка в квартире", description: "Провести генеральную уборку в квартире", date: "02/10/24", isCompleted: false),
-//        Task(title: "Заняться спортом", description: "Сходить в спортзал или сделать тренировку дома. Не забыть про разминку и растяжку!", date: "02/10/24", isCompleted: false),
-//        Task(title: "Работа над проектом", description: "Выделить время для работы над проектом на работе. Сфокусироваться на выполнении важных задач.", date: "09/10/24", isCompleted: false),
-//        Task(title: "Вечерний отдых", description: "Найти время для расслабления перед сном: посмотреть фильм или послушать музыку", date: "02/10/24", isCompleted: false),
-//        Task(title: "Зарядка утром", description: "Сделать утреннюю зарядку перед началом дня.", date: "02/10/24", isCompleted: false)
-//    ]
-    
+    private var filteredTasks: [Task] = []
+    private var isSearchActive: Bool { return !searchController.searchBar.text!.isEmpty }
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        title = "Задачи"
+        navigationController?.navigationBar.prefersLargeTitles = true
         view.backgroundColor = UIColor(hex: "040404")
         tableView.delegate = self
         tableView.dataSource = self
         editButton.addTarget(self, action: #selector(editButtonTapped), for: .touchUpInside)
-        view.addSubviews(titleLabel, searchBar, tableView, editButton, bottomTitle)
+        
+        navigationItem.searchController = searchController
+        searchController.searchResultsUpdater = self
+        definesPresentationContext = true
+        
+        view.addSubviews(tableView, editButton, bottomTitle)
         setupConstraints()
+        
         APIClient.shared.getMockData { result in
             switch result {
             case .success(let toDoItems):
-                self.tasks = toDoItems.map({
-                    return Task(
-                        title: $0.todo,
-                        description: "Составить список необходимых продуктов для ужина. Не забыть проверить, что уже есть в холодильнике.",
-                        date: "09/10/24",
-                        isCompleted: $0.completed
-                    )
-                })
+                self.tasks = toDoItems.map {
+                    Task(title: $0.todo, description: "Example description", date: "09/10/24", isCompleted: $0.completed)
+                }
                 DispatchQueue.main.async {
                     self.tableView.reloadData()
                 }
@@ -101,19 +86,8 @@ class TaskViewController: UIViewController {
     
     private func setupConstraints() {
         
-        titleLabel.snp.makeConstraints { make in
-            make.top.equalTo(view.safeAreaLayoutGuide).offset(5)
-            make.trailing.equalToSuperview().inset(20)
-            make.centerX.equalToSuperview()
-        }
-        searchBar.snp.makeConstraints { make in
-            make.top.equalTo(titleLabel.snp.bottom).offset(10)
-            make.leading.trailing.equalToSuperview().inset(20)
-            make.height.equalTo(36)
-            
-        }
         tableView.snp.makeConstraints { make in
-            make.top.equalTo(searchBar.snp.bottom).offset(16)
+            make.top.equalTo(view.safeAreaLayoutGuide).offset(16)
             make.leading.trailing.equalToSuperview()
             make.bottom.equalTo(bottomTitle.snp.top).offset(-20)
         }
@@ -124,17 +98,15 @@ class TaskViewController: UIViewController {
             make.height.equalTo(28)
         }
         bottomTitle.snp.makeConstraints { make in
-            make.trailing.leading.equalToSuperview()
+            make.leading.trailing.equalToSuperview()
             make.bottom.equalTo(view.safeAreaLayoutGuide).inset(15.5)
         }
-        
     }
 }
 
 extension TaskViewController: UITableViewDelegate, UITableViewDataSource {
-    
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return tasks.count
+        return isSearchActive ? filteredTasks.count : tasks.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -142,17 +114,21 @@ extension TaskViewController: UITableViewDelegate, UITableViewDataSource {
             return UITableViewCell()
         }
         
-        let task = tasks[indexPath.row]
-        
+        let task = isSearchActive ? filteredTasks[indexPath.row] : tasks[indexPath.row]
         cell.configure(title: task.title, description: task.description, date: task.date, isCompleted: task.isCompleted)
-        
         return cell
     }
     
-    
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        tasks[indexPath.row].isCompleted.toggle()
+        let index = indexPath.row
+        if isSearchActive {
+            let originalIndex = tasks.firstIndex { $0.title == filteredTasks[index].title }!
+            tasks[originalIndex].isCompleted.toggle()
+            filteredTasks[index].isCompleted.toggle()
+        } else {
+            tasks[index].isCompleted.toggle()
+        }
         tableView.reloadRows(at: [indexPath], with: .automatic)
     }
     
@@ -160,5 +136,12 @@ extension TaskViewController: UITableViewDelegate, UITableViewDataSource {
         let taskDetailVC = TaskDetailViewController()
         navigationController?.pushViewController(taskDetailVC, animated: true)
     }
-    
+}
+
+extension TaskViewController: UISearchResultsUpdating {
+    func updateSearchResults(for searchController: UISearchController) {
+        let searchText = searchController.searchBar.text!.lowercased()
+        filteredTasks = tasks.filter { $0.title.lowercased().contains(searchText) }
+        tableView.reloadData()
+    }
 }
